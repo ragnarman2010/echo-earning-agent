@@ -10,6 +10,26 @@
  */
 import { writeFileSync, appendFileSync, readFileSync, unlinkSync } from 'node:fs'
 
+// Telegram configuration
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+async function sendTelegram(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+  } catch (e) {
+    console.log('Telegram send error:', e);
+  }
+}
+
 const EVM_WALLET = '0x093a108bf0a8409cce65ec6aa0c4dc9898d92bda' // Base USDC receive-only
 const BASE_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 const now = new Date().toISOString()
@@ -331,7 +351,8 @@ if (notify) {
     : newContract
     ? `⚡ DEALWORK BID ACCEPTED (${now}) — escrow locked, work is owed; open a Claude session to deliver`
     : `event (${now})`
-  writeFileSync(NOTIFY, msg + '\n')
+  writeFileSync(NOTIFY, msg + '\\n')
+  await sendTelegram(msg)
 } else {
   try { unlinkSync(NOTIFY) } catch {}
 }
